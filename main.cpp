@@ -30,26 +30,38 @@ bool checkCoins(short coins, short thieves) {
 typedef pair <short, short> vertex; // a vertex is in form<short, short> = <townId, coins>
 
 int dist[maxN][1 << maxThieves]; // all distances for each town-coin(vertex) configuration 2000 * 2^13 ~= 16 million => (int = 4 bytes) => 64 MB
+
 vertex par[maxN][1 << maxThieves]; // for each town-coin(vertex) the parent (preceeding) vertex in the shortest path ** (vertex = 2 shorts = 4 bytes) => 64 MB
+
 vector < pair<short, pair<int, short> > > edges[maxN]; // all incident edges of i'th town is edges[i] = <nextTown, <distance, thieves> >
+
 short coinsInTown[maxN]; // bitmask of the coins sold by jewelers in each townId
 
+// returns the current distance of the vertex a
 int getDist(vertex a) {
   return dist[a.first][a.second];
 }
 
+// sets the distance of the vertex a to newDist
 void setDist(vertex a, int newDist) {
   dist[a.first][a.second] = newDist;
 }
 
+// gets the current parent vertex of the vertex a
 vertex getPar(vertex a) {
   return par[a.first][a.second];
 }
 
+// sets the parent vertex of the vertex a to newPar
 void setPar(vertex a, vertex newPar) {
   par[a.first][a.second] = newPar;
 }
 
+// runs a dijkstra algorithm over all vertices (all town & coin configuration),
+// determining both the distances of shortest paths from the startVertex to other vertices
+// and the parent vertex of each vertex in such shortest path configuration
+// parents are set in the par array in the form par[townNo][coinConfiguration]
+// distances are ser in the dist array in the form dist[townNo][coinConfiguration]
 void dijkstra(vertex startVertex) {
   // below is a min heap whose every element is in the form <distance, vertex>
   // so that in every step the vertex with the minimum distance can be gotten. (ordered by distances)
@@ -90,19 +102,29 @@ void dijkstra(vertex startVertex) {
 }
 
 // returns a reachable vertex in the given town whose distance is minimized
+// (checks each coin configuration for that town)
 vertex getSolution(short endTown) {
+  // set the coin configuration to 0 initally.
   short minSolutionCoins = 0;
-  for (short i = 0; i < (1 << maxThieves); ++i) {
+  // start from coin cofiguration (i) = 1, since 0 is the initial solution.
+  for (short i = 1; i < (1 << maxThieves); ++i) {
+    // currDist is the current solution
     int currDist = getDist(make_pair(endTown, minSolutionCoins));
+    // nextDist is the next one
     int nextDist = getDist(make_pair(endTown, i));
     // dist = -1 means it is not reachable
     if (currDist == -1 || (nextDist != -1 && nextDist < currDist)) {
+      // if currDist is -1, current solution is not a real solution, set it to i
+      // if neither of them are -1 and nextDist is smaller than currDist, i is a betterSolution than the current one
+      // so, set minSolutionCoins (current solution) to i
       minSolutionCoins = i;
     }
   }
+  // return the vertex with the given town and the coin configuration for the best solution.
   return make_pair(endTown, minSolutionCoins);
 }
 
+// main method, takes the file names as args, (input & output)
 int main(int argc, char *argv[]) {
   // to read & write faster
   ios_base::sync_with_stdio(false);
@@ -121,84 +143,79 @@ int main(int argc, char *argv[]) {
   int m, k;
   // n: number of towns, m: number of roads, p: number of thief kinds, k: number of jewelers
   inFile >> n >> m >> p >> k;
-  // cout << "read: " << n << " " << m << " " << k << endl;
+
+  // for all jewelers
   while (k--) {
     short townId;
     int q;
+    // q: number of coins of the current jeweler
     inFile >> townId >> q;
+    // for each coin
     while (q--) {
       short coinType;
       inFile >> coinType;
+      // add the coin to the coins in that town
       coinsInTown[townId] = combineCoins (coinsInTown[townId], (short)1 << (coinType - 1));
     }
   }
 
+  // for each road
   while (m--) {
     short begTown, endTown, thievesBitmask = 0;
     int dist, numberOfThieves;
     inFile >> begTown >> endTown >> dist >> numberOfThieves;
+    // for each thief in town
     while (numberOfThieves--) {
       short thieveType;
       inFile >> thieveType;
+      // add the type of thief to the thievesBitmask for that road
+      // that is the bitmask of the coins required to pass this road
       thievesBitmask = combineCoins(thievesBitmask, (short)1 << (thieveType - 1));
     }
+    // since the towns create an undirected graph, push two edges in opposing directions.
     edges[begTown].push_back(make_pair(endTown, make_pair(dist, thievesBitmask)));
     edges[endTown].push_back(make_pair(begTown, make_pair(dist, thievesBitmask)));
   }
 
+  // starting vertex is the first town, and all the coins in the first town.
   vertex startVertex = make_pair(1, coinsInTown[1]);
+
+  // use the dijkstra algorithm and decide distances and parent vertices of each vertex.
   dijkstra(startVertex);
+
+  // get the result vertex (the one with the minimal distance) in the n'th town (last)
   vertex resultVertex = getSolution(n);
 
-  /*
-  cout << "dist: " << getDist(resultVertex) << endl;
-
-  for (int i = 1; i <= n; ++i) {
-    for (int j = 0; j < (1<<p); ++j) {
-      cout << getDist(make_pair(i,j)) << " ";
-    }
-    cout << endl;
-  }
-   */
-
+  // if the resultVertex has a distance -1, that means, the last town is not reachable -> print -1 and quit
+  // else print the path to the resultVertex
   if (getDist(resultVertex) == -1) {
     // no possible paths
     outFile << "-1" << endl;
   } else {
+    // print the best path
+    // a container to hold the vertices of the path in reversed order.
     vector<vertex> reversedPath;
 
     while (resultVertex != startVertex) {
+      // push the current vertex starting from the resultVertex until startVertex is reached
       reversedPath.push_back(resultVertex);
       resultVertex = getPar(resultVertex);
     }
+
+    // push the startVertex also
     reversedPath.push_back(resultVertex);
 
+    // print the town id of each vertex in the path
+    // print in reverse direction because the container holds the vertices in reverse direction.
     for (int i = reversedPath.size() - 1; i >= 0; --i) {
+      // print only the town id (.first) of each vertex
       outFile << reversedPath[i].first << " ";
     }
     outFile << endl;
   }
+  // output is completed
 
   // close filestreams
   inFile.close();
   outFile.close();
 }
-
-/* SAMPLE INPUT
-
- 6 7 4 2
- 2 1 2
- 3 2 1 3
- 1 2 2 0
- 2 3 9 0
- 1 4 2 1 2
- 2 5 3 0
- 4 5 5 2 2 3
- 4 6 18 0
- 5 6 3 2 1 2
-
- OUTPUT
-
- 1 2 1 4 6
-
-*/

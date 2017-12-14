@@ -23,7 +23,7 @@ Similarly since there are at most 3000 roads, there are at most 3000 * 8192 = 24
 Since dijkstra runs in O(|E+V|log|V|) in worst case, 
 That is around (2.4m + 1.6m)log1.6m = 4m * 20.6 = 82.4m which is fast enough to run in a few seconds.    
 
-#### _Tried & Committed Test Cases sent via mail._
+#### _Tried Test Cases sent via mail._
 
 - - - -
 

@@ -83,9 +83,10 @@ void dijkstra(vertex startVertex) {
         pair<short, pair<int, short> > currEdge = edges[currVertex.first][i];
         // currVertex.second = current coins,
         // currEdge.second.second, is the thieves on the current edge
+        // there are enough coins to pass the thieves on this road
         if (checkCoins(currVertex.second, currEdge.second.second)) {
           vertex nextVertex = make_pair(currEdge.first, combineCoins(currVertex.second, coinsInTown[currEdge.first]));
-          int newDist = getDist(currVertex) + currEdge.first;
+          int newDist = getDist(currVertex) + currEdge.second.first;
           // if nextVertex is not reached or it can be reached with a shorter distance
           if (getDist(nextVertex) == -1 || getDist(nextVertex) > newDist) {
             // set the preceeding vertex of nextVertex, currVertex

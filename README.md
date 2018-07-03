@@ -1,3 +1,14 @@
+# Dijkstra Assignment
+### C++ implementation of an assigment involving dijkstra and bitmasking.
+
+## Project Details
+
+That's a project I've created as a university homework for the course, CMPE 250 - Data Structures and Algorithms on Dec 14th, 2017.
+
+What the project is about can be found via [Project3.pdf](https://github.com/corupta/CMPE250-Dijkstra-Assignment/blob/master/Project3.pdf)
+
+## My Solution
+
 I've used dijkstra algorithm to efficiently calculate distances to each town.
 
 To overcome the thief challange, I used bitmasking.
